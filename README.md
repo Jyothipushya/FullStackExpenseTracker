@@ -17,7 +17,7 @@ BudgetWise is a full-stack expense tracking and budgeting application built usin
 ## 🛠️ Tech Stack
 - Java, Spring Boot
 - HTML, CSS, Thymeleaf
-- MySQL
+- PostgreSQL
 - Maven
 
 ---
@@ -27,7 +27,7 @@ BudgetWise is a full-stack expense tracking and budgeting application built usin
 2. Open in IntelliJ IDEA
 3. Configure database in `application.properties`
 4. Run the Spring Boot application
-5. Access: http://localhost:8080
+5. Access: http://localhost:8081
 
 ---
 

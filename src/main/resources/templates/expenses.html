@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetWise | Expense Tracking</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar (same as dashboard) -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-chart-line"></i><h2>Budget<span>Wise</span></h2></div>
+        </div>
+        <div class="user-profile">
+            <div class="avatar"><i class="fas fa-user-circle"></i></div>
+            <div class="user-info">
+                <h4 th:text="${user.fullName}">User Name</h4>
+                <p th:text="${user.email}">user@email.com</p>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li class="active"><a href="/expenses"><i class="fas fa-wallet"></i><span>Expenses</span></a></li>
+                <li><a href="/budgets"><i class="fas fa-chart-pie"></i><span>Budget</span><span class="badge">AI</span></a></li>
+                <li><a href="#"><i class="fas fa-chart-pie"></i><span>Budget</span></a></li>
+                <li><a href="#"><i class="fas fa-robot"></i><span>AI Advisor</span></a></li>
+                <li><a href="/logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="main-header">
+            <h1>Expense & Income Tracking</h1>
+            <button class="btn-primary" onclick="showAddTransactionModal()">
+                <i class="fas fa-plus"></i> Add Transaction
+            </button>
+        </header>
+
+        <!-- Success/Error Messages -->
+        <div th:if="${success}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${success}"></span>
+        </div>
+
+        <div th:if="${error}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Summary Cards -->
+        <section class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon income"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="stat-info"><h3>$<span th:text="${#numbers.formatDecimal(totalIncome, 1, 2)}">0.00</span></h3><p>Total Income</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon expense"><i class="fas fa-shopping-cart"></i></div>
+                <div class="stat-info"><h3>$<span th:text="${#numbers.formatDecimal(totalExpenses, 1, 2)}">0.00</span></h3><p>Total Expenses</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon savings"><i class="fas fa-piggy-bank"></i></div>
+                <div class="stat-info">
+                    <h3 th:class="${balance >= 0} ? 'income-amount' : 'expense-amount'">
+                        $<span th:text="${#numbers.formatDecimal(balance, 1, 2)}">0.00</span>
+                    </h3>
+                    <p>Current Balance</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Chart (if you want to add) -->
+        <!-- <div class="content-card">
+            <div class="card-header"><h3>Category Breakdown</h3></div>
+            <canvas id="categoryChart"></canvas>
+        </div> -->
+
+        <!-- Transaction List -->
+        <div class="content-card">
+            <div class="card-header">
+                <h3>Recent Transactions</h3>
+            </div>
+            <div class="table-container">
+                <table class="transactions-table">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="expense : ${expenses}">
+                        <td th:text="${#temporals.format(expense.date, 'MMM dd')}">Jan 01</td>
+                        <td th:text="${expense.description}">Transaction</td>
+                        <td><span class="category-tag" th:text="${expense.category}">Category</span></td>
+                        <td>
+                            <span th:if="${expense.isIncome}" class="badge income">Income</span>
+                            <span th:unless="${expense.isIncome}" class="badge expense">Expense</span>
+                        </td>
+                        <td th:class="${expense.isIncome} ? 'income-amount' : 'expense-amount'">
+                            <span th:if="${expense.isIncome}">+</span>
+                            <span th:unless="${expense.isIncome}">-</span>
+                            $<span th:text="${#numbers.formatDecimal(expense.amount, 1, 2)}">0.00</span>
+                        </td>
+                        <td>
+                            <!-- ✅ CORRECTED: POST form with CSRF token -->
+                            <form th:action="@{/expenses/delete/{id}(id=${expense.id})}"
+                                  method="POST"
+                                  style="display: inline;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <button type="submit"
+                                        class="btn-danger btn-small"
+                                        onclick="return confirm('Delete this transaction?')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(expenses)}">
+                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-wallet" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
+                            <p>No transactions yet. Add your first expense or income!</p>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add Transaction Modal -->
+<div class="modal" id="addTransactionModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New Transaction</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addTransactionForm" action="/expenses/add" method="POST">
+                <!-- ✅ CSRF TOKEN -->
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <div class="form-group">
+                    <label>Transaction Type</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="isIncome" value="false" checked onclick="updateCategoryOptions(false)">
+                            <span>Expense</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="isIncome" value="true" onclick="updateCategoryOptions(true)">
+                            <span>Income</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description"
+                           placeholder="What is this transaction for?" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Amount ($)</label>
+                    <input type="number" id="amount" name="amount" step="0.01"
+                           min="0.01" placeholder="0.00" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required>
+                        <!-- Expense categories (default) -->
+                        <option value="">Select Category</option>
+                        <option value="Food & Dining">Food & Dining</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Transportation">Transportation</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Bills & Utilities">Bills & Utilities</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Education">Education</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date"
+                           th:value="${#temporals.format(today, 'yyyy-MM-dd')}" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set today's date in form
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+        document.getElementById('date').max = today;
+    });
+
+    function showAddTransactionModal() {
+        document.getElementById('addTransactionModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        document.getElementById('addTransactionModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function updateCategoryOptions(isIncome) {
+        const categorySelect = document.getElementById('category');
+
+        if (isIncome) {
+            // Income categories
+            categorySelect.innerHTML = `
+                <option value="">Select Category</option>
+                <option value="Salary">Salary</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Investment">Investment</option>
+                <option value="Bonus">Bonus</option>
+                <option value="Gift">Gift</option>
+                <option value="Other Income">Other Income</option>
+            `;
+        } else {
+            // Expense categories
+            categorySelect.innerHTML = `
+                <option value="">Select Category</option>
+                <option value="Food & Dining">Food & Dining</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Bills & Utilities">Bills & Utilities</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Education">Education</option>
+                <option value="Other">Other</option>
+            `;
+        }
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            closeModal();
+        }
+    });
+</script>
+</body>
+</html>

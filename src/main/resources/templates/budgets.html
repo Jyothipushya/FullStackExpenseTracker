@@ -8,44 +8,541 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        .budget-container { padding: 2rem; }
-        .budget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .budget-summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .summary-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .summary-card h3 { color: #666; font-size: 0.9rem; margin-bottom: 0.5rem; }
-        .summary-card .value { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .summary-card.total-budget .value { color: #3498db; }
-        .summary-card.total-spent .value { color: #e74c3c; }
-        .summary-card.total-remaining .value { color: #2ecc71; }
-        .summary-card.overall-progress .value { color: #f39c12; }
-        .budget-progress-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .budget-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .budget-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .budget-category { display: flex; align-items: center; gap: 0.5rem; }
-        .budget-category i { font-size: 1.2rem; color: #666; }
-        .budget-status { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
-        .status-ontrack { background: #d5f4e6; color: #27ae60; }
-        .status-warning { background: #fff3cd; color: #f39c12; }
-        .status-over { background: #f8d7da; color: #e74c3c; }
-        .progress-bar-container { margin: 1rem 0; }
-        .progress-bar { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 5px; transition: width 0.3s ease; }
-        .progress-ontrack { background: #2ecc71; }
-        .progress-warning { background: #f39c12; }
-        .progress-over { background: #e74c3c; }
-        .budget-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
-        .stat-item { text-align: center; }
-        .stat-label { font-size: 0.8rem; color: #666; margin-bottom: 0.25rem; }
-        .stat-value { font-size: 1.2rem; font-weight: 600; }
-        .ai-advice-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 1.5rem; margin-top: 2rem; }
-        .ai-advice-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-        .ai-advice-header i { font-size: 1.5rem; }
-        .ai-tip { background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 0.75rem; }
-        .ai-tip:last-child { margin-bottom: 0; }
-        .empty-state { text-align: center; padding: 3rem; color: #666; }
-        .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-        .action-buttons { display: flex; gap: 1rem; margin-top: 1rem; }
-        .btn-ai { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; }
+        /* ===== MAIN LAYOUT ===== */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ===== HEADER ===== */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header-left p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-goal {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-goal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+        }
+
+        /* ===== SUMMARY CARDS ===== */
+        .budget-summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .summary-card h3 {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .summary-card.total-budget .value {
+            color: #3b82f6;
+        }
+
+        .summary-card.total-spent .value {
+            color: #ef4444;
+        }
+
+        .summary-card.total-remaining .value {
+            color: #10b981;
+        }
+
+        .summary-card.overall-progress .value {
+            color: #f59e0b;
+        }
+
+        .summary-card p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* ===== BUDGET PROGRESS GRID ===== */
+        .budget-progress-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .budget-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .budget-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+
+        .budget-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .budget-category {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .budget-category i {
+            font-size: 1.4rem;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 0.75rem;
+            border-radius: 12px;
+        }
+
+        .budget-category h3 {
+            font-size: 18px;
+            color: #1e293b;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .budget-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-ontrack {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-over {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .progress-bar-container {
+            margin: 1.5rem 0;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-ontrack {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .progress-warning {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .progress-over {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .budget-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .budget-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-small {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1.5px solid #e2e8f0;
+            color: #64748b;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* ===== SAVING GOALS PREVIEW SECTION ===== */
+        .goals-preview-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-top: 2.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-header h2 i {
+            color: #8b5cf6;
+        }
+
+        .goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .goal-preview-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid #8b5cf6;
+            transition: all 0.3s;
+        }
+
+        .goal-preview-card:hover {
+            background: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+        }
+
+        .goal-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .goal-preview-header h4 {
+            font-size: 16px;
+            color: #1e293b;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .progress-percentage {
+            font-size: 14px;
+            font-weight: 700;
+            color: #8b5cf6;
+            background: #ede9fe;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+        }
+
+        .goal-progress {
+            margin: 1rem 0;
+        }
+
+        .goal-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .view-all-btn {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn-view-all {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            padding: 0.875rem 2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .btn-view-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        /* ===== AI ADVICE SECTION ===== */
+        .ai-advice-card {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        .ai-advice-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .ai-advice-header i {
+            font-size: 1.5rem;
+        }
+
+        .ai-advice-header h2 {
+            font-size: 20px;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .ai-tip {
+            background: rgba(255,255,255,0.1);
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .ai-tip:last-child {
+            margin-bottom: 0;
+        }
+
+        .ai-tip i {
+            font-size: 1.2rem;
+            margin-top: 0.25rem;
+            color: #7dd3fc;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h2 {
+            color: #1e293b;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            color: #64748b;
+            font-size: 16px;
+            margin-bottom: 2rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1024px) {
+            .budget-progress-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .goals-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                gap: 1.5rem;
+                align-items: flex-start;
+            }
+
+            .action-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .budget-summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -58,7 +555,7 @@
         <div class="user-profile">
             <div class="avatar"><i class="fas fa-user-circle"></i></div>
             <div class="user-info">
-                <h4 th:text="${userName}">User Name</h4>
+                <h4 th:text="${userName}">Jyothi Pushya</h4>
                 <p>Budget Dashboard</p>
             </div>
         </div>
@@ -66,7 +563,8 @@
             <ul>
                 <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
                 <li><a href="/expenses"><i class="fas fa-wallet"></i><span>Expenses</span></a></li>
-                <li class="active"><a href="/budgets"><i class="fas fa-chart-pie"></i><span>Budget</span><span class="badge">AI</span></a></li>
+                <li class="active"><a href="/budgets"><i class="fas fa-chart-pie"></i><span>Budget</span></a></li>
+                <li><a href="/budgets/budget-and-goals"><i class="fas fa-bullseye"></i><span>Saving Goals</span></a></li>
                 <li><a href="#"><i class="fas fa-robot"></i><span>AI Advisor</span></a></li>
                 <li><a href="#"><i class="fas fa-bell"></i><span>Alerts</span></a></li>
                 <li><a href="#"><i class="fas fa-chart-bar"></i><span>Reports</span></a></li>
@@ -80,6 +578,7 @@
 
     <!-- Main Content -->
     <main class="main-content">
+        <!-- Header -->
         <header class="main-header">
             <div class="header-left">
                 <h1>Budget Dashboard</h1>
@@ -87,10 +586,13 @@
             </div>
             <div class="header-right">
                 <div class="action-buttons">
-                    <a href="./budget-setup.html" class="btn-primary">
+                    <a href="/budgets/budget-and-goals" class="btn btn-goal">
+                        <i class="fas fa-bullseye"></i> View Goals
+                    </a>
+                    <a href="/budgets/setup" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Set Budgets
                     </a>
-                    <button class="btn-ai" onclick="showAIRecommendationModal()">
+                    <button class="btn btn-ai" onclick="showAIRecommendationModal()">
                         <i class="fas fa-robot"></i> AI Setup
                     </button>
                 </div>
@@ -107,16 +609,16 @@
             <span th:text="${error}"></span>
         </div>
 
-        <!-- Empty State (No budgets set) -->
+        <!-- Empty State -->
         <div th:if="${!hasBudgets}" class="empty-state">
             <i class="fas fa-chart-pie"></i>
             <h2>No Budgets Set Yet</h2>
             <p>Start by setting up your monthly budgets to track your spending</p>
             <div class="action-buttons" style="justify-content: center; margin-top: 2rem;">
-                <a href="./budget-setup.html" class="btn-primary">
+                <a href="/budgets/setup" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Set Up Budgets
                 </a>
-                <button class="btn-ai" onclick="showAIRecommendationModal()">
+                <button class="btn btn-ai" onclick="showAIRecommendationModal()">
                     <i class="fas fa-robot"></i> Use AI Setup
                 </button>
             </div>
@@ -150,7 +652,6 @@
         <div th:if="${hasBudgets}" class="budget-progress-grid">
             <div class="budget-card" th:each="budget : ${budgetProgress}">
                 <div class="budget-card-header">
-                    <!-- SIMPLIFIED ICON - No complex Thymeleaf -->
                     <div class="budget-category">
                         <i class="fas fa-chart-pie"></i>
                         <h3 th:text="${budget.category}">Category</h3>
@@ -163,7 +664,7 @@
                         <div class="progress-fill" th:class="'progress-' + ${budget.status}"
                              th:style="'width: ' + ${budget.percentageUsed} + '%'"></div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-top: 0.5rem;">
+                    <div class="progress-labels">
                         <span>0%</span>
                         <span th:text="${budget.percentageUsed} + '%'">50%</span>
                         <span>100%</span>
@@ -185,13 +686,82 @@
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-top: 1rem;">
+                <div class="budget-actions">
                     <a th:href="@{/budgets/delete/{id}(id=${budget.budgetId})}"
                        class="btn-small btn-outline"
                        onclick="return confirm('Are you sure you want to delete this budget?')">
                         <i class="fas fa-trash"></i> Delete
                     </a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Saving Goals Preview Section -->
+        <div class="goals-preview-section">
+            <div class="section-header">
+                <h2><i class="fas fa-bullseye"></i> Saving Goals Preview</h2>
+                <a href="/budgets/budget-and-goals" class="btn btn-goal">
+                    <i class="fas fa-external-link-alt"></i> View All
+                </a>
+            </div>
+
+            <div class="goals-grid">
+                <!-- Goal 1 -->
+                <div class="goal-preview-card">
+                    <div class="goal-preview-header">
+                        <h4>🏠 House Down Payment</h4>
+                        <span class="progress-percentage">35%</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 35%; background: linear-gradient(90deg, #8b5cf6, #7c3aed);"></div>
+                        </div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>₹3.5L saved</span>
+                        <span>₹10L target</span>
+                    </div>
+                </div>
+
+                <!-- Goal 2 -->
+                <div class="goal-preview-card">
+                    <div class="goal-preview-header">
+                        <h4>✈️ Europe Vacation</h4>
+                        <span class="progress-percentage">40%</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 40%; background: linear-gradient(90deg, #ec4899, #db2777);"></div>
+                        </div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>₹1.2L saved</span>
+                        <span>₹3L target</span>
+                    </div>
+                </div>
+
+                <!-- Goal 3 -->
+                <div class="goal-preview-card">
+                    <div class="goal-preview-header">
+                        <h4>🚗 New Car</h4>
+                        <span class="progress-percentage">15%</span>
+                    </div>
+                    <div class="goal-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 15%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+                        </div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>₹1.2L saved</span>
+                        <span>₹8L target</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view-all-btn">
+                <a href="/budgets/create-goal" class="btn btn-view-all">
+                    <i class="fas fa-plus-circle"></i> Create New Goal
+                </a>
             </div>
         </div>
 
@@ -204,12 +774,7 @@
 
             <div th:each="tip : ${aiSuggestions}">
                 <div class="ai-tip">
-                    <!-- Simple icon logic -->
-                    <i th:if="${tip.contains('✅')}" class="fas fa-check-circle"></i>
-                    <i th:if="${tip.contains('⚠️')}" class="fas fa-exclamation-triangle"></i>
-                    <i th:if="${tip.contains('❌')}" class="fas fa-times-circle"></i>
-                    <i th:unless="${tip.contains('✅') or tip.contains('⚠️') or tip.contains('❌')}"
-                       class="fas fa-lightbulb"></i>
+                    <i class="fas fa-lightbulb"></i>
                     <span th:text="${tip}">AI suggestion here</span>
                 </div>
             </div>
@@ -263,6 +828,19 @@
         if (event.target === modal) {
             closeAIModal();
         }
+    });
+
+    // Animate progress bars
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            document.querySelectorAll('.progress-fill').forEach(function(bar) {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(function() {
+                    bar.style.width = width;
+                }, 300);
+            });
+        }, 500);
     });
 </script>
 </body>

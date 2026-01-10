@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Category Analysis | BudgetWise AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .back-btn {
+            background: #4a6ee0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .back-btn:hover {
+            background: #3a5ed0;
+        }
+        .time-filter {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .time-btn {
+            padding: 8px 20px;
+            border: 2px solid #4a6ee0;
+            background: white;
+            color: #4a6ee0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .time-btn.active {
+            background: #4a6ee0;
+            color: white;
+        }
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .chart-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            min-height: 500px;
+        }
+        .chart-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .no-data-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .no-data-message i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .category-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .category-table th {
+            background: #4a6ee0;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+        .category-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .category-table tr:hover {
+            background: #f8f9fa;
+        }
+        .color-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .debug-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        .action-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .debug-box {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4a6ee0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-chart-pie"></i> Category Analysis</h1>
+        <a href="/trends/dashboard" class="back-btn">
+            ← Back to Trends Dashboard
+        </a>
+    </div>
+
+    <!-- Time Filter -->
+    <div class="time-filter">
+        <div>
+            <h3 style="color: #2c3e50; margin: 0;">Analysis Period</h3>
+            <p style="color: #666; margin-top: 5px;">
+                Showing data from
+                <span th:text="${startDate}">Start Date</span> to
+                <span th:text="${endDate}">End Date</span>
+                (<span th:text="${days}">30</span> days)
+            </p>
+        </div>
+        <div class="filter-buttons">
+            <a th:href="@{/trends/category-analysis(days=30)}"
+               th:class="'time-btn' + (${days} == 30 ? ' active' : '')">
+                Last 30 Days
+            </a>
+            <a th:href="@{/trends/category-analysis(days=90)}"
+               th:class="'time-btn' + (${days} == 90 ? ' active' : '')">
+                Last 3 Months
+            </a>
+            <a th:href="@{/trends/category-analysis(days=180)}"
+               th:class="'time-btn' + (${days} == 180 ? ' active' : '')">
+                Last 6 Months
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary" th:if="${hasData}">
+        <div class="stat-card">
+            <div class="stat-label">Total Spent</div>
+            <div class="stat-value" th:text="'₹' + ${#numbers.formatDecimal(categoryData.totalSpent, 0, 'COMMA', 2, 'POINT')}">
+                ₹0
+            </div>
+            <div class="stat-label">In selected period</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Categories</div>
+            <div class="stat-value" th:text="${categoryData.categoryCount}">
+                0
+            </div>
+            <div class="stat-label">Unique categories</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Average per Category</div>
+            <div class="stat-value"
+                 th:if="${categoryData.categoryCount > 0}"
+                 th:text="'₹' + ${#numbers.formatDecimal(categoryData.totalSpent / categoryData.categoryCount, 0, 'COMMA', 2, 'POINT')}">
+                ₹0
+            </div>
+            <div class="stat-value" th:unless="${categoryData.categoryCount > 0}">₹0</div>
+            <div class="stat-label">Average spending</div>
+        </div>
+    </div>
+
+    <!-- Debug Info Box -->
+    <div class="debug-box">
+        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">Debug Information:</h4>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div><strong>Has Data:</strong> <span th:text="${hasData}" style="color: #dc3545;">false</span></div>
+            <div><strong>Category Count:</strong> <span th:text="${categoryData.categoryCount}" style="color: #dc3545;">0</span></div>
+            <div><strong>Total Spent:</strong> <span th:text="'₹' + ${#numbers.formatDecimal(categoryData.totalSpent, 0, 'COMMA', 2, 'POINT')}">₹0</span></div>
+            <div><strong>Labels:</strong> <span th:text="${categoryData.labels}" style="color: #007bff;">[]</span></div>
+            <div th:if="${categoryData.labels != null}">
+                <strong>Labels Size:</strong> <span th:text="${categoryData.labels.size()}" style="color: #28a745;">0</span>
+            </div>
+            <div>
+                <strong>User ID:</strong> <span style="color: #6c757d;">1 (hardcoded)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-section">
+        <h3 class="chart-title">Spending Distribution by Category</h3>
+
+        <!-- Show chart ONLY if we have data -->
+        <div th:if="${hasData and categoryData.labels != null and categoryData.labels.size() > 0}"
+             class="chart-container">
+            <canvas id="categoryChart"></canvas>
+        </div>
+
+        <!-- Show "No Data" message if no data -->
+        <div th:unless="${hasData and categoryData.labels != null and categoryData.labels.size() > 0}"
+             class="no-data-message">
+            <i class="fas fa-chart-pie"></i>
+            <h3>No Data Available</h3>
+            <p>You haven't recorded any expenses for the selected period.</p>
+            <p><strong>Selected period:</strong> <span th:text="${startDate}"></span> to <span th:text="${endDate}"></span></p>
+
+            <!-- Debug: Show why -->
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px; max-width: 600px; margin: 20px auto;">
+                <h4 style="color: #856404; margin-bottom: 10px;">Why is there no data?</h4>
+                <ul style="text-align: left; display: inline-block; margin: 0;">
+                    <li>Expenses might be for a different user (current user ID: 1)</li>
+                    <li>Expenses might be outside the date range</li>
+                    <li>Expenses might be marked as income (not expenses)</li>
+                    <li>Categories might be empty or null</li>
+                    <li>Database connection issues</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="/expenses" class="back-btn" style="background: #28a745;">
+                    <i class="fas fa-plus"></i> Add Expense
+                </a>
+                <a href="/trends/dashboard" class="back-btn" style="background: #6c757d;">
+                    Back to Dashboard
+                </a>
+                <a href="/trends/test/expenses" class="back-btn" style="background: #ffc107; color: #000;">
+                    <i class="fas fa-bug"></i> Debug Data
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Table (only show if we have data) -->
+    <div th:if="${hasData and categoryData.labels != null and categoryData.labels.size() > 0}">
+        <h3 style="color: #2c3e50; margin-bottom: 20px;">Category Breakdown</h3>
+        <table class="category-table">
+            <thead>
+            <tr>
+                <th>Category</th>
+                <th>Amount (₹)</th>
+                <th>Percentage</th>
+                <th>Average Daily</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="label, stat : ${categoryData.labels}">
+                <td>
+                    <span class="color-indicator" th:style="'background-color: ' + ${categoryData.colors[stat.index]}"></span>
+                    <span th:text="${label}">Category</span>
+                </td>
+                <td th:text="'₹' + ${#numbers.formatDecimal(categoryData.data[stat.index], 0, 'COMMA', 2, 'POINT')}">
+                    ₹0
+                </td>
+                <td th:text="${categoryData.percentages[stat.index]} + '%'">
+                    0%
+                </td>
+                <td th:text="'₹' + ${#numbers.formatDecimal(categoryData.data[stat.index] / days, 0, 'COMMA', 2, 'POINT')}">
+                    ₹0
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Thymeleaf Data Injection -->
+<!-- Thymeleaf Data Injection -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // Get the JSON string from controller
+    var categoryDataJson = /*[[${categoryDataJson}]]*/ '{}';
+
+    // Parse JSON to get real data
+    var categoryData = {};
+    var hasData = false;
+
+    try {
+        if (categoryDataJson && categoryDataJson !== '{}') {
+            categoryData = JSON.parse(categoryDataJson);
+            hasData = true;
+        }
+    } catch (e) {
+        console.error("Error parsing category data:", e);
+    }
+
+    // DEBUG: Log to console
+    console.log("=== CATEGORY ANALYSIS DEBUG ===");
+    console.log("Has Data:", hasData);
+    console.log("Category Data Object:", categoryData);
+    console.log("Labels:", categoryData.labels);
+    console.log("Data:", categoryData.data);
+    console.log("Colors:", categoryData.colors);
+    /*]]>*/
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded, checking for chart data...");
+
+        // Check if we have data and chart canvas exists
+        if (hasData && categoryData.labels && categoryData.labels.length > 0) {
+            console.log("Creating chart with", categoryData.labels.length, "categories");
+            console.log("First label:", categoryData.labels[0]);
+            console.log("First data value:", categoryData.data[0]);
+
+            const chartCanvas = document.getElementById('categoryChart');
+            if (!chartCanvas) {
+                console.error("ERROR: Chart canvas element not found!");
+                return;
+            }
+
+            console.log("Chart canvas found, creating chart...");
+
+            try {
+                // Make sure data is numbers, not strings
+                const numericData = categoryData.data.map(item => parseFloat(item));
+                console.log("Numeric data:", numericData);
+
+                const ctx = chartCanvas.getContext('2d');
+
+                // Create the chart
+                const chart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: categoryData.labels,
+                        datasets: [{
+                            data: numericData,
+                            backgroundColor: categoryData.colors || [
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                                '#9966FF', '#FF9F40', '#8AC926', '#1982C4'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                        return `${label}: ₹${value.toLocaleString()} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                console.log("Chart created successfully!");
+
+                // Force chart update
+                setTimeout(() => {
+                    chart.update();
+                    console.log("Chart updated!");
+                }, 100);
+
+            } catch (error) {
+                console.error("ERROR creating chart:", error);
+                console.error("Error details:", error.message);
+                console.error("Error stack:", error.stack);
+
+                // Show error on page
+                const chartContainer = document.querySelector('.chart-container');
+                if (chartContainer) {
+                    chartContainer.innerHTML = `
+                        <div style="color: red; padding: 20px; text-align: center;">
+                            <h3>Chart Error</h3>
+                            <p>${error.message}</p>
+                            <p>Check browser console for details</p>
+                        </div>
+                    `;
+                }
+            }
+        } else {
+            console.log("No data available for chart. Check:");
+            console.log("- hasData:", hasData);
+            console.log("- categoryData:", categoryData);
+            console.log("- labels exist:", !!categoryData.labels);
+            console.log("- labels length:", categoryData.labels ? categoryData.labels.length : 0);
+        }
+    });
+</script>

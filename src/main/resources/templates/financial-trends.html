@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BudgetWise | Financial Trends</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .trends-container {
+            padding: 2rem;
+        }
+
+        .trends-header {
+            margin-bottom: 2rem;
+        }
+
+        .trends-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .trend-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .trend-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .trend-card-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .health-score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .score-grade {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .health-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .progress-bar-container {
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .goal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+
+        .goal-name {
+            flex: 1;
+        }
+
+        .goal-amount {
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+
+        .goal-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-almost {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-halfway {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .filter-select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 2rem;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .nav-tab.active {
+            color: #9b59b6;
+            border-bottom-color: #9b59b6;
+        }
+
+        .nav-tab:hover {
+            color: #8e44ad;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-chart-line"></i><h2>Budget<span>Wise</span></h2></div>
+        </div>
+        <div class="user-profile">
+            <div class="avatar"><i class="fas fa-user-circle"></i></div>
+            <div class="user-info">
+                <h4 th:text="${userName}">Jyothi Pushya</h4>
+                <p>Financial Trends</p>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+                <li><a href="/expenses"><i class="fas fa-wallet"></i><span>Expenses</span></a></li>
+                <li><a href="/budgets"><i class="fas fa-chart-pie"></i><span>Budget</span></a></li>
+                <li><a href="/goals/dashboard"><i class="fas fa-bullseye"></i><span>Saving Goals</span></a></li>
+                <li class="active"><a href="/trends/dashboard"><i class="fas fa-chart-line"></i><span>Financial Trends</span></a></li>
+                <li><a href="#"><i class="fas fa-robot"></i><span>AI Advisor</span></a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="trends-container">
+            <!-- Header -->
+            <div class="trends-header">
+                <h1><i class="fas fa-chart-line"></i> Financial Trends & Analysis</h1>
+                <p>Visual insights into your financial patterns and progress</p>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <a href="/trends/dashboard" class="nav-tab active">
+                    <i class="fas fa-tachometer-alt"></i> Overview
+                </a>
+                <a href="/trends/category-analysis" class="nav-tab">
+                    <i class="fas fa-chart-pie"></i> Category Analysis
+                </a>
+                <a href="/trends/income-expense-analysis" class="nav-tab">
+                    <i class="fas fa-exchange-alt"></i> Income vs Expense
+                </a>
+                <a href="/trends/financial-health" class="nav-tab">
+                    <i class="fas fa-heartbeat"></i> Financial Health
+                </a>
+                <a href="/trends/year-comparison" class="nav-tab">
+                    <i class="fas fa-calendar-alt"></i> Year Comparison
+                </a>
+            </div>
+
+            <!-- Financial Health Score -->
+            <!-- Financial Health Score -->
+            <div class="health-score-card">
+                <div class="score-circle">
+                    <div class="score-value" th:text="${healthScore.overallScore} ?: 0">0</div>
+                    <div class="score-grade" th:text="${healthScore.grade} ?: 'N/A'">N/A</div>
+                </div>
+                <h3 style="text-align: center; margin-bottom: 1rem;">Financial Health Score</h3>
+
+                <div class="health-metrics">
+                    <div class="metric-item">
+                        <div class="metric-value">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 0}">
+                                <span th:text="${healthScore.metrics[0].score} ?: 0">0</span>%
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 0}">N/A</span>
+                        </div>
+                        <div class="metric-label">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 0}">
+                                <span th:text="${healthScore.metrics[0].name}">Savings Rate</span>
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 0}">
+                                Savings Rate
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-value">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 1}">
+                                <span th:text="${healthScore.metrics[1].score} ?: 0">0</span>%
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 1}">N/A</span>
+                        </div>
+                        <div class="metric-label">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 1}">
+                                <span th:text="${healthScore.metrics[1].name}">Debt-to-Income</span>
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 1}">
+                                Debt-to-Income
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-value">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 2}">
+                                <span th:text="${healthScore.metrics[2].score} ?: 0">0</span>%
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 2}">N/A</span>
+                        </div>
+                        <div class="metric-label">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 2}">
+                                <span th:text="${healthScore.metrics[2].name}">Emergency Fund</span>
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 2}">
+                                Emergency Fund
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="metric-item">
+                        <div class="metric-value">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 3}">
+                                <span th:text="${healthScore.metrics[3].score} ?: 0">0</span>%
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 3}">N/A</span>
+                        </div>
+                        <div class="metric-label">
+                            <span th:if="${healthScore.metrics != null and healthScore.metrics.size() > 3}">
+                                <span th:text="${healthScore.metrics[3].name}">Spending Control</span>
+                            </span>
+                            <span th:unless="${healthScore.metrics != null and healthScore.metrics.size() > 3}">
+                                Spending Control
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <span class="filter-label">Year:</span>
+                    <select id="yearFilter" class="filter-select">
+                        <option th:each="year : ${#numbers.sequence(currentYear-5, currentYear)}"
+                                th:value="${year}"
+                                th:text="${year}"
+                                th:selected="${year == currentYear}"></option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Time Range:</span>
+                    <select id="timeRangeFilter" class="filter-select">
+                        <option value="6">Last 6 Months</option>
+                        <option value="12" selected>Last 12 Months</option>
+                        <option value="24">Last 2 Years</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="trends-grid">
+                <!-- Monthly Expense Trends -->
+                <div class="trend-card">
+                    <div class="trend-card-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Monthly Expense Trends</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthlyTrendsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="trend-card">
+                    <div class="trend-card-header">
+                        <h3><i class="fas fa-chart-pie"></i> Spending by Category</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Income vs Expense -->
+                <div class="trend-card">
+                    <div class="trend-card-header">
+                        <h3><i class="fas fa-exchange-alt"></i> Income vs Expenses</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Saving Goals Progress -->
+                <div class="trend-card">
+                    <div class="trend-card-header">
+                        <h3><i class="fas fa-bullseye"></i> Saving Goals Progress</h3>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div th:each="goal, stat : ${goalsProgress.goals}" class="goal-item">
+                            <div class="goal-name" th:text="${goal}">Goal Name</div>
+                            <div class="goal-amount" th:text="'¥' + ${goalsProgress.current[stat.index]} + '/¥' + ${goalsProgress.target[stat.index]}">
+                                ¥0/¥0
+                            </div>
+                            <div class="goal-status"
+                                 th:class="${goalsProgress.status[stat.index] == 'Completed' ? 'status-completed' :
+                                          goalsProgress.status[stat.index] == 'Almost There' ? 'status-almost' :
+                                          'status-halfway'}"
+                                 th:text="${goalsProgress.status[stat.index]}">
+                                Status
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse JSON data
+        const monthlyData = JSON.parse('[[${monthlyTrendsJson}]]');
+        const categoryData = JSON.parse('[[${categoryBreakdownJson}]]');
+        const incomeExpenseData = JSON.parse('[[${incomeVsExpenseJson}]]');
+
+        // Initialize charts with this data...
+    });
+    /*]]>*/
+
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Monthly Trends Chart
+        const monthlyCtx = document.getElementById('monthlyTrendsChart').getContext('2d');
+        const monthlyChart = new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: [[${monthlyTrends.labels}]],
+                datasets: [{
+                    label: 'Monthly Expenses',
+                    data: [[${monthlyTrends.data}]],
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 2. Category Breakdown Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        const categoryChart = new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [[${categoryBreakdown.labels}]],
+                datasets: [{
+                    data: [[${categoryBreakdown.data}]],
+                    backgroundColor: [[${categoryBreakdown.colors}]],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 3. Income vs Expense Chart
+        const incomeExpenseCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+        const incomeExpenseChart = new Chart(incomeExpenseCtx, {
+            type: 'bar',
+            data: {
+                labels: [[${incomeVsExpense.labels}]],
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: [[${incomeVsExpense.income}]],
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Expenses',
+                        data: [[${incomeVsExpense.expenses}]],
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '¥' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Filter Change Listeners
+        document.getElementById('yearFilter').addEventListener('change', function() {
+            const year = this.value;
+            loadMonthlyTrends(year);
+        });
+
+        document.getElementById('timeRangeFilter').addEventListener('change', function() {
+            const months = this.value;
+            loadIncomeExpenseData(months);
+        });
+    });
+
+    // AJAX Functions
+    function loadMonthlyTrends(year) {
+        fetch(`/trends/api/monthly-trends?year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update the chart
+                const chart = Chart.getChart('monthlyTrendsChart');
+                chart.data.labels = data.labels;
+                chart.data.datasets[0].data = data.data;
+                chart.update();
+            });
+    }
+
+    function loadIncomeExpenseData(months) {
+        fetch(`/trends/api/income-vs-expense?months=${months}`)
+            .then(response => response.json())
+            .then(data => {
+                const chart = Chart.getChart('incomeExpenseChart');
+                chart.data.labels = data.labels;
+                chart.data.datasets[0].data = data.income;
+                chart.data.datasets[1].data = data.expenses;
+                chart.update();
+            });
+    }
+</script>
+</body>
+</html>

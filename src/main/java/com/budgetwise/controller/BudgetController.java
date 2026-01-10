@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.math.RoundingMode; // ADD THIS IMPORT
 
 @Controller
 @RequestMapping("/budgets")
@@ -483,6 +484,7 @@ public class BudgetController {
         return suggestions;
 
     }
+
     // Add this method to your BudgetController class
     @ModelAttribute("savingGoal")
     public Map<String, Object> savingGoal() {
@@ -497,4 +499,46 @@ public class BudgetController {
         goal.put("description", "");
         return goal;
     }
+    // In BudgetService.java, add this method:
+
+// ==================== BUDGET RECOMMENDATIONS ====================
+
+    /**
+     * Get recommended budget amounts based on user's income
+     */
+    public Map<String, BigDecimal> getRecommendedBudgets(BigDecimal monthlyIncome) {
+        Map<String, BigDecimal> recommendations = new HashMap<>();
+
+        if (monthlyIncome == null || monthlyIncome.compareTo(BigDecimal.ZERO) <= 0) {
+            return recommendations; // Return empty map for invalid income
+        }
+
+        // Simple 50/30/20 rule: 50% needs, 30% wants, 20% savings
+        BigDecimal needs = monthlyIncome.multiply(new BigDecimal("0.50"));
+        BigDecimal wants = monthlyIncome.multiply(new BigDecimal("0.30"));
+        BigDecimal savings = monthlyIncome.multiply(new BigDecimal("0.20"));
+
+        // Distribute into categories
+        recommendations.put("Food & Dining", needs.multiply(new BigDecimal("0.30"))); // 30% of needs
+        recommendations.put("Rent/Mortgage", needs.multiply(new BigDecimal("0.40"))); // 40% of needs
+        recommendations.put("Bills & Utilities", needs.multiply(new BigDecimal("0.20"))); // 20% of needs
+        recommendations.put("Transportation", needs.multiply(new BigDecimal("0.10"))); // 10% of needs
+
+        recommendations.put("Shopping", wants.multiply(new BigDecimal("0.40"))); // 40% of wants
+        recommendations.put("Entertainment", wants.multiply(new BigDecimal("0.40"))); // 40% of wants
+        recommendations.put("Personal Care", wants.multiply(new BigDecimal("0.20"))); // 20% of wants
+
+        recommendations.put("Savings & Investments", savings);
+
+        // Round to nearest 100
+        for (Map.Entry<String, BigDecimal> entry : recommendations.entrySet()) {
+            BigDecimal rounded = entry.getValue()
+                    .divide(new BigDecimal("100"), 0, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"));
+            recommendations.put(entry.getKey(), rounded);
+        }
+
+        return recommendations;
+    }
 }
+

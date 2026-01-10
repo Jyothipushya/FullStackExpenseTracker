@@ -36,7 +36,7 @@ public class BudgetService {
 
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
 
-        // Check if budget already exists
+        // CORRECT: Using findByUserAndCategoryAndCurrentMonth (matches repository)
         Optional<Budget> existingBudget = budgetRepository.findByUserAndCategoryAndCurrentMonth(
                 user, category, currentMonth
         );
@@ -45,8 +45,10 @@ public class BudgetService {
         if (existingBudget.isPresent()) {
             budget = existingBudget.get();
             budget.setMonthlyLimit(monthlyLimit);
+            budget.setCurrentMonth(currentMonth); // Update month if needed
         } else {
             budget = new Budget(user, category, monthlyLimit);
+            budget.setCurrentMonth(currentMonth);
         }
 
         return budgetRepository.save(budget);
@@ -57,7 +59,15 @@ public class BudgetService {
      */
     public List<Budget> getUserBudgets(User user) {
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+        // CORRECT: Using findByUserAndMonth (matches repository)
         return budgetRepository.findByUserAndMonth(user, currentMonth);
+    }
+
+    /**
+     * Get all budgets for a user (all time)
+     */
+    public List<Budget> getAllUserBudgets(User user) {
+        return budgetRepository.findByUser(user);
     }
 
     /**
@@ -65,6 +75,13 @@ public class BudgetService {
      */
     public void deleteBudget(Long budgetId) {
         budgetRepository.deleteById(budgetId);
+    }
+
+    /**
+     * Delete budget by user, category and month
+     */
+    public void deleteBudget(User user, String category, LocalDate month) {
+        budgetRepository.deleteByUserAndCategoryAndCurrentMonth(user, category, month.withDayOfMonth(1));
     }
 
     // ==================== BUDGET PROGRESS CALCULATION ====================
@@ -79,9 +96,9 @@ public class BudgetService {
         String category = budget.getCategory();
         LocalDate month = budget.getCurrentMonth();
 
-        // Calculate total expenses for this category in this month
-        List<Expense> expenses = expenseRepository.findByUserAndDateBetween(
-                user,
+        // FIXED: Using findByUserIdAndDateBetween instead of findByUserAndDateBetween
+        List<Expense> expenses = expenseRepository.findByUserIdAndDateBetween(
+                user.getId(),
                 month.withDayOfMonth(1),
                 month.withDayOfMonth(month.lengthOfMonth())
         );
@@ -298,10 +315,40 @@ public class BudgetService {
     // ==================== ADDITIONAL HELPER METHODS ====================
 
     /**
+     * Check if user has budget for specific category in current month
+     */
+    public boolean hasBudgetForCategory(User user, String category) {
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+        return budgetRepository.existsByUserAndCategoryAndCurrentMonth(user, category, currentMonth);
+    }
+
+    /**
+     * Get budget for specific category
+     */
+    public Optional<Budget> getBudgetForCategory(User user, String category) {
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+        return budgetRepository.findByUserAndCategoryAndCurrentMonth(user, category, currentMonth);
+    }
+
+    /**
+     * Get categories with budgets
+     */
+    public List<String> getBudgetCategories(User user) {
+        return budgetRepository.findDistinctCategoriesByUser(user);
+    }
+    // In BudgetService.java, add this method:
+
+// ==================== BUDGET RECOMMENDATIONS ====================
+
+    /**
      * Get recommended budget amounts based on user's income
      */
     public Map<String, BigDecimal> getRecommendedBudgets(BigDecimal monthlyIncome) {
         Map<String, BigDecimal> recommendations = new HashMap<>();
+
+        if (monthlyIncome == null || monthlyIncome.compareTo(BigDecimal.ZERO) <= 0) {
+            return recommendations; // Return empty map for invalid income
+        }
 
         // Simple 50/30/20 rule: 50% needs, 30% wants, 20% savings
         BigDecimal needs = monthlyIncome.multiply(new BigDecimal("0.50"));
@@ -329,5 +376,44 @@ public class BudgetService {
         }
 
         return recommendations;
+    }
+
+    /**
+     * Get recommended budgets based on user's recent income
+     */
+    public Map<String, BigDecimal> getRecommendedBudgetsForUser(User user) {
+        // Get last month's income
+        LocalDate now = LocalDate.now();
+        LocalDate lastMonthStart = now.minusMonths(1).withDayOfMonth(1);
+        LocalDate lastMonthEnd = lastMonthStart.withDayOfMonth(lastMonthStart.lengthOfMonth());
+
+        // Calculate average monthly income (last 3 months)
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        int monthCount = 0;
+
+        for (int i = 1; i <= 3; i++) {
+            LocalDate monthStart = now.minusMonths(i).withDayOfMonth(1);
+            LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
+
+            List<Expense> monthlyExpenses = expenseRepository.findByUserIdAndDateBetween(
+                    user.getId(), monthStart, monthEnd
+            );
+
+            BigDecimal monthlyIncome = monthlyExpenses.stream()
+                    .filter(Expense::isIncome)
+                    .map(Expense::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (monthlyIncome.compareTo(BigDecimal.ZERO) > 0) {
+                totalIncome = totalIncome.add(monthlyIncome);
+                monthCount++;
+            }
+        }
+
+        BigDecimal averageMonthlyIncome = monthCount > 0
+                ? totalIncome.divide(BigDecimal.valueOf(monthCount), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return getRecommendedBudgets(averageMonthlyIncome);
     }
 }

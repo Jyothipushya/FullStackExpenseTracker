@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Financial Health | BudgetWise AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* ... (keep your existing styles) ... */
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-heartbeat"></i> Financial Health Score</h1>
+        <a th:href="@{/trends/dashboard}" class="back-btn">
+            ← Back to Trends Dashboard
+        </a>
+    </div>
+
+    <!-- Health Score Display -->
+    <div class="health-score-container">
+        <div class="score-circle">
+            <canvas id="scoreChart" width="200" height="200"></canvas>
+            <div class="score-value" id="scoreValue">0</div>
+        </div>
+        <div class="score-grade" id="scoreGrade">Loading...</div>
+        <div class="score-text" id="scoreText">Loading financial health data...</div>
+    </div>
+
+    <!-- Health Metrics -->
+    <h2 style="color: #2c3e50; margin: 40px 0 20px;">Health Metrics</h2>
+    <div class="metrics-grid" id="metricsGrid">
+        <!-- Will be populated by JavaScript -->
+        <div class="loading-placeholder">
+            <p>Loading metrics...</p>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="recommendations">
+        <h3><i class="fas fa-lightbulb"></i> AI Recommendations</h3>
+        <div id="recommendationsList">
+            <!-- Will be populated by JavaScript -->
+            <div class="loading-placeholder">
+                <p>Loading recommendations...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REAL Data Injection from Controller -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // Get the JSON string from controller
+    var healthDataJson = /*[[${healthDataJson}]]*/ '{}';
+
+    // Parse the JSON to get real data
+    var healthData = {};
+    try {
+        if (healthDataJson && healthDataJson !== '{}') {
+            healthData = JSON.parse(healthDataJson);
+        } else {
+            // Fallback to empty data structure
+            healthData = {
+                overallScore: 0,
+                grade: "N/A",
+                status: "No Data",
+                message: "No financial health data available",
+                metrics: [],
+                recommendations: []
+            };
+        }
+    } catch (e) {
+        console.error("Error parsing health data:", e);
+        healthData = {
+            overallScore: 0,
+            grade: "Error",
+            status: "Data Error",
+            message: "Could not load financial health data",
+            metrics: [],
+            recommendations: []
+        };
+    }
+    /*]]>*/
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            console.log("Financial Health Data:", healthData);
+
+            // 1. Circular Score Chart
+            const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+            const score = healthData.overallScore || 0;
+            const grade = healthData.grade || "N/A";
+            const status = healthData.status || "No Data";
+            const message = healthData.message || "";
+
+            // Update text elements
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('scoreGrade').textContent =
+                (grade !== "N/A" ? grade + " - " : "") + status;
+            document.getElementById('scoreText').textContent =
+                message || getScoreText(score);
+
+            // Determine color based on score
+            let scoreColor;
+            if (score >= 80) scoreColor = '#28a745';
+            else if (score >= 60) scoreColor = '#ffc107';
+            else if (score > 0) scoreColor = '#dc3545';
+            else scoreColor = '#6c757d';
+
+            // Only create chart if score > 0
+            if (score > 0) {
+                new Chart(scoreCtx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [score, 100 - score],
+                            backgroundColor: [scoreColor, '#e9ecef'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        cutout: '75%',
+                        responsive: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    }
+                });
+            } else {
+                // Show empty state
+                document.getElementById('scoreChart').style.display = 'none';
+                document.querySelector('.score-circle').innerHTML +=
+                    '<div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#6c757d;">No Data</div>';
+            }
+
+            // 2. Populate Metrics Grid
+            const metricsGrid = document.getElementById('metricsGrid');
+            metricsGrid.innerHTML = '';
+
+            if (healthData.metrics && healthData.metrics.length > 0) {
+                healthData.metrics.forEach(metric => {
+                    const card = document.createElement('div');
+                    card.className = `metric-card ${getStatusClass(metric.score)}`;
+
+                    card.innerHTML = `
+                        <div class="metric-title">
+                            <div class="metric-name">${metric.name || "Unknown Metric"}</div>
+                            <div class="metric-score">${metric.score || 0}/100</div>
+                        </div>
+                        <div class="metric-description">${metric.description || "No description available"}</div>
+                        <div style="margin-top: 15px; height: 6px; background: #e9ecef; border-radius: 3px;">
+                            <div style="height: 100%; width: ${metric.score || 0}%; background: ${getScoreColor(metric.score || 0)}; border-radius: 3px;"></div>
+                        </div>
+                    `;
+                    metricsGrid.appendChild(card);
+                });
+            } else {
+                metricsGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #6c757d;">
+                        <i class="fas fa-chart-line" style="font-size: 48px; margin-bottom: 20px;"></i>
+                        <h3>No Metrics Available</h3>
+                        <p>Financial metrics data is not available. Try syncing your accounts or adding transactions.</p>
+                    </div>
+                `;
+            }
+
+            // 3. Populate Recommendations
+            const recList = document.getElementById('recommendationsList');
+            recList.innerHTML = '';
+
+            if (healthData.recommendations && healthData.recommendations.length > 0) {
+                healthData.recommendations.forEach(rec => {
+                    const item = document.createElement('div');
+                    item.className = 'recommendation-item';
+                    item.innerHTML = `
+                        <div class="rec-icon"><i class="fas fa-check-circle"></i></div>
+                        <div>${rec}</div>
+                    `;
+                    recList.appendChild(item);
+                });
+            } else {
+                recList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #6c757d;">
+                        <p>No recommendations available at this time.</p>
+                        <p>Complete your financial profile to get personalized recommendations.</p>
+                    </div>
+                `;
+            }
+
+            console.log("Financial Health page initialized with real data!");
+
+        } catch (error) {
+            console.error("Error initializing financial health page:", error);
+            // Show error state
+            document.getElementById('scoreValue').textContent = "Error";
+            document.getElementById('scoreGrade').textContent = "Data Error";
+            document.getElementById('scoreText').textContent = "Could not load financial health data";
+            document.getElementById('metricsGrid').innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 20px;"></i>
+                    <h3>Data Loading Error</h3>
+                    <p>${error.message}</p>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+    });
+
+    function getScoreColor(score) {
+        if (score >= 80) return '#28a745';
+        if (score >= 60) return '#ffc107';
+        if (score > 0) return '#dc3545';
+        return '#6c757d';
+    }
+
+    function getStatusClass(score) {
+        if (score >= 80) return 'excellent';
+        if (score >= 70) return 'good';
+        if (score >= 60) return 'fair';
+        if (score > 0) return 'poor';
+        return 'poor'; // For zero/no data
+    }
+
+    function getScoreText(score) {
+        if (score >= 90) return "Outstanding financial health! You're in the top 10%.";
+        if (score >= 80) return "Excellent! You have strong financial habits.";
+        if (score >= 70) return "Good financial health with room for improvement.";
+        if (score >= 60) return "Fair. Consider implementing some recommendations.";
+        if (score > 0) return "Needs attention. Focus on improving key metrics.";
+        return "No financial health data available. Add transactions to get your score.";
+    }
+</script>
+</body>
+</html>

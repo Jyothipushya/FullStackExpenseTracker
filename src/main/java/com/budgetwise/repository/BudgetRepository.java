@@ -14,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
+
     // Find all budgets for a user
     List<Budget> findByUser(User user);
 

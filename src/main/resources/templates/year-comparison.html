@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Year Comparison | BudgetWise AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .back-btn {
+            background: #4a6ee0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .back-btn:hover {
+            background: #3a5ed0;
+        }
+        .year-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .year-btn {
+            padding: 10px 20px;
+            border: 2px solid #4a6ee0;
+            background: white;
+            color: #4a6ee0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .year-btn.active {
+            background: #4a6ee0;
+            color: white;
+        }
+        .year-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+        .vs {
+            font-weight: 600;
+            color: #666;
+        }
+        .comparison-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .stat-change {
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .change-positive { color: #28a745; }
+        .change-negative { color: #dc3545; }
+        .change-neutral { color: #6c757d; }
+        .chart-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .chart-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .month-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        .month-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .month-current {
+            color: #4a6ee0;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .month-previous {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .month-change {
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> Year Comparison</h1>
+        <a href="/trends/dashboard" class="back-btn">
+            ← Back to Trends Dashboard
+        </a>
+    </div>
+
+    <!-- Debug Info -->
+    <div class="debug-info">
+        <h4 style="margin: 0 0 10px 0; color: #856404;">Debug Information:</h4>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            <div><strong>Selected Year:</strong> <span th:text="${selectedYear}" style="color: #007bff;">2024</span></div>
+            <div><strong>Data Success:</strong> <span th:text="${yearData.success}" style="color: #dc3545;">false</span></div>
+            <div><strong>Current Year Total:</strong> <span th:text="${yearData.currentYearTotal}" style="color: #28a745;">0</span></div>
+        </div>
+    </div>
+
+    <!-- Year Selector -->
+    <div class="year-selector">
+        <a th:href="@{/trends/year-comparison(year=2022)}"
+           th:class="'year-btn' + (${selectedYear} == 2022 ? ' active' : '')">2022</a>
+        <a th:href="@{/trends/year-comparison(year=2023)}"
+           th:class="'year-btn' + (${selectedYear} == 2023 ? ' active' : '')">2023</a>
+        <a th:href="@{/trends/year-comparison(year=2024)}"
+           th:class="'year-btn' + (${selectedYear} == 2024 ? ' active' : '')">2024</a>
+        <a th:href="@{/trends/year-comparison(year=2025)}"
+           th:class="'year-btn' + (${selectedYear} == 2025 ? ' active' : '')">2025</a>
+        <div class="vs">vs</div>
+        <span class="year-btn" style="background: #e9ecef; cursor: default; border-color: #ccc;">
+            [[${selectedYear - 1}]]
+        </span>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="comparison-stats" id="summaryStats">
+        <!-- Will be populated by JavaScript -->
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #6c757d;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
+            <p>Loading year comparison data...</p>
+        </div>
+    </div>
+
+    <!-- Monthly Trends Chart -->
+    <div class="chart-section">
+        <h3 class="chart-title"><i class="fas fa-chart-bar"></i> Monthly Expense Comparison</h3>
+        <div class="chart-wrapper">
+            <canvas id="yearComparisonChart"></canvas>
+        </div>
+        <div id="chartError" style="display: none; color: #dc3545; text-align: center; margin-top: 20px;">
+            <i class="fas fa-exclamation-triangle"></i> Could not load chart data
+        </div>
+    </div>
+
+    <!-- Monthly Grid -->
+    <h3 style="color: #2c3e50; margin: 30px 0 20px;">Monthly Breakdown</h3>
+    <div class="monthly-grid" id="monthlyGrid">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #6c757d;">
+            Loading monthly data...
+        </div>
+    </div>
+</div>
+
+<!-- Thymeleaf Data Injection -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // Get JSON from controller
+    var yearDataJson = /*[[${yearDataJson}]]*/ '{}';
+
+    // Parse to get real data
+    var yearData = {};
+    var hasRealData = false;
+
+    try {
+        if (yearDataJson && yearDataJson !== '{}') {
+            yearData = JSON.parse(yearDataJson);
+            hasRealData = true;
+            console.log("Year Comparison Data (JSON):", yearData);
+        } else {
+            console.warn("No JSON data received from controller");
+            // Fallback to empty data structure
+            yearData = {
+                labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                currentYear: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                previousYear: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                currentYearTotal: 0,
+                previousYearTotal: 0,
+                totalChange: 0,
+                currentYearValue: /*[[${selectedYear}]]*/ 2024,
+                previousYearValue: /*[[${selectedYear} - 1]]*/ 2023,
+                success: false
+            };
+        }
+    } catch (e) {
+        console.error("Error parsing year data:", e);
+        yearData = {
+            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            currentYear: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            previousYear: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            currentYearTotal: 0,
+            previousYearTotal: 0,
+            totalChange: 0,
+            currentYearValue: /*[[${selectedYear}]]*/ 2024,
+            previousYearValue: /*[[${selectedYear} - 1]]*/ 2023,
+            success: false
+        };
+    }
+
+    // Get years from the data
+    var currentYear = yearData.currentYearValue || /*[[${selectedYear}]]*/ 2024;
+    var previousYear = yearData.previousYearValue || (currentYear - 1);
+    /*]]>*/
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded for Year Comparison");
+        console.log("Current Year:", currentYear);
+        console.log("Previous Year:", previousYear);
+        console.log("Year Data Object:", yearData);
+
+        initializeYearComparison();
+    });
+
+    function initializeYearComparison() {
+        try {
+            // 1. Update summary stats
+            updateSummaryStats();
+
+            // 2. Create comparison chart
+            createComparisonChart();
+
+            // 3. Populate monthly grid
+            populateMonthlyGrid();
+
+            console.log("Year Comparison page initialized successfully!");
+
+        } catch (error) {
+            console.error("Error initializing year comparison:", error);
+
+            // Show error message
+            document.getElementById('summaryStats').innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 30px; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 36px; margin-bottom: 15px;"></i>
+                    <h3>Error Loading Data</h3>
+                    <p>${error.message}</p>
+                    <button onclick="location.reload()" class="back-btn" style="margin-top: 15px;">
+                        <i class="fas fa-redo"></i> Reload Page
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    function updateSummaryStats() {
+        const currentTotal = yearData.currentYearTotal || 0;
+        const previousTotal = yearData.previousYearTotal || 0;
+        const totalChange = yearData.totalChange || 0;
+
+        // Calculate other changes
+        const avgChange = calculateAverageChange();
+        const maxMonthChange = calculateMaxMonthChange();
+
+        document.getElementById('summaryStats').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-label">${currentYear} Total</div>
+                <div class="stat-value">₹${formatCurrency(currentTotal)}</div>
+                <div class="stat-change ${getChangeClass(totalChange)}">
+                    ${totalChange > 0 ? '+' : ''}${totalChange.toFixed(1)}%
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">${previousYear} Total</div>
+                <div class="stat-value">₹${formatCurrency(previousTotal)}</div>
+                <div class="stat-label">Previous Year</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Change</div>
+                <div class="stat-value">${avgChange.toFixed(1)}%</div>
+                <div class="stat-change ${getChangeClass(avgChange)}">
+                    ${avgChange > 0 ? '+' : ''}${avgChange.toFixed(1)}%
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Max Month Change</div>
+                <div class="stat-value">${maxMonthChange.toFixed(1)}%</div>
+                <div class="stat-change ${getChangeClass(maxMonthChange)}">
+                    ${maxMonthChange > 0 ? '+' : ''}${maxMonthChange.toFixed(1)}%
+                </div>
+            </div>
+        `;
+    }
+
+    function createComparisonChart() {
+        const ctx = document.getElementById('yearComparisonChart').getContext('2d');
+
+        // Make sure data exists
+        if (!yearData.labels || !yearData.currentYear || !yearData.previousYear) {
+            document.getElementById('chartError').style.display = 'block';
+            console.error("Missing chart data");
+            return;
+        }
+
+        // Convert data to numbers if they're strings
+        const currentData = yearData.currentYear.map(val => {
+            const num = parseFloat(val);
+            return isNaN(num) ? 0 : num;
+        });
+
+        const previousData = yearData.previousYear.map(val => {
+            const num = parseFloat(val);
+            return isNaN(num) ? 0 : num;
+        });
+
+        // Clear previous chart if exists
+        if (window.yearChart) {
+            window.yearChart.destroy();
+        }
+
+        try {
+            window.yearChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: yearData.labels,
+                    datasets: [
+                        {
+                            label: `${currentYear}`,
+                            data: currentData,
+                            borderColor: '#4a6ee0',
+                            backgroundColor: 'rgba(74, 110, 224, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: `${previousYear}`,
+                            data: previousData,
+                            borderColor: '#6c757d',
+                            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ₹${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + formatCurrency(value);
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Amount (₹)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Months'
+                            }
+                        }
+                    }
+                }
+            });
+
+            console.log("Chart created successfully!");
+
+        } catch (error) {
+            console.error("Error creating chart:", error);
+            document.getElementById('chartError').innerHTML =
+                `<i class="fas fa-exclamation-triangle"></i> Chart Error: ${error.message}`;
+            document.getElementById('chartError').style.display = 'block';
+        }
+    }
+
+    function populateMonthlyGrid() {
+        const monthlyGrid = document.getElementById('monthlyGrid');
+
+        if (!yearData.labels || !yearData.currentYear || !yearData.previousYear) {
+            monthlyGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle"></i> No monthly data available
+                </div>
+            `;
+            return;
+        }
+
+        monthlyGrid.innerHTML = '';
+
+        for (let i = 0; i < yearData.labels.length; i++) {
+            const current = parseFloat(yearData.currentYear[i]) || 0;
+            const previous = parseFloat(yearData.previousYear[i]) || 0;
+            const change = previous > 0 ? ((current - previous) / previous) * 100 : 0;
+
+            const monthCard = document.createElement('div');
+            monthCard.className = 'month-card';
+            monthCard.innerHTML = `
+                <div class="month-name">${yearData.labels[i]}</div>
+                <div class="month-current">₹${formatCurrency(current)}</div>
+                <div class="month-previous">₹${formatCurrency(previous)} (${previousYear})</div>
+                <div class="month-change ${getChangeClass(change)}">
+                    ${change > 0 ? '↑' : change < 0 ? '↓' : '→'} ${Math.abs(change).toFixed(1)}%
+                </div>
+            `;
+            monthlyGrid.appendChild(monthCard);
+        }
+    }
+
+    // Helper functions
+    function calculateAverageChange() {
+        if (!yearData.currentYear || !yearData.previousYear) return 0;
+
+        let totalChange = 0;
+        let count = 0;
+
+        for (let i = 0; i < yearData.currentYear.length; i++) {
+            const current = parseFloat(yearData.currentYear[i]) || 0;
+            const previous = parseFloat(yearData.previousYear[i]) || 0;
+
+            if (previous > 0) {
+                const change = ((current - previous) / previous) * 100;
+                totalChange += change;
+                count++;
+            }
+        }
+
+        return count > 0 ? totalChange / count : 0;
+    }
+
+    function calculateMaxMonthChange() {
+        if (!yearData.currentYear || !yearData.previousYear) return 0;
+
+        let maxChange = 0;
+
+        for (let i = 0; i < yearData.currentYear.length; i++) {
+            const current = parseFloat(yearData.currentYear[i]) || 0;
+            const previous = parseFloat(yearData.previousYear[i]) || 0;
+
+            if (previous > 0) {
+                const change = Math.abs(((current - previous) / previous) * 100);
+                maxChange = Math.max(maxChange, change);
+            }
+        }
+
+        return maxChange;
+    }
+
+    function formatCurrency(value) {
+        const num = parseFloat(value);
+        if (isNaN(num)) return '0';
+
+        if (num >= 100000) {
+            return (num / 100000).toFixed(1) + 'L';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+
+        return Math.round(num).toLocaleString('en-IN');
+    }
+
+    function getChangeClass(change) {
+        if (change > 5) return 'change-positive';
+        if (change < -5) return 'change-negative';
+        return 'change-neutral';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Goals Analytics | BudgetWise AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-btn {
+            background: #4a6ee0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
+        }
+        .back-btn:hover {
+            background: #3a5ed0;
+        }
+        .manage-goals-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+        }
+        .time-filter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .filter-select {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 14px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            padding: 25px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-saved { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        .stat-progress { background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%); }
+        .stat-rate { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        .stat-label {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .chart-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin: 30px 0;
+        }
+        .chart-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+        }
+        .chart-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .predictions-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .prediction-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .prediction-ahead { border-color: #28a745; }
+        .prediction-ontrack { border-color: #17a2b8; }
+        .prediction-behind { border-color: #dc3545; }
+        .goal-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .goal-prediction {
+            color: #666;
+            font-size: 14px;
+        }
+        .confidence {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .confidence-high { background: #d4edda; color: #155724; }
+        .confidence-medium { background: #fff3cd; color: #856404; }
+        .confidence-low { background: #f8d7da; color: #721c24; }
+        .recommendations-section {
+            background: #e9ecef;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+        .rec-icon {
+            color: #4a6ee0;
+            font-size: 20px;
+            margin-top: 3px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> Goals Analytics & Insights</h1>
+        <div>
+            <a href="/trends/dashboard" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Trends
+            </a>
+            <a href="/budgets/budget-and-goals" class="manage-goals-btn">
+                <i class="fas fa-edit"></i> Manage Goals
+            </a>
+        </div>
+    </div>
+
+    <!-- Time Filter -->
+    <div class="time-filter">
+        <div>
+            <h3 style="color: #2c3e50; margin: 0;">Analysis Period</h3>
+            <p style="color: #666; margin-top: 5px;">Select time range for analytics</p>
+        </div>
+        <select class="filter-select" onchange="window.location.href='/trends/goals-analytics?months=' + this.value">
+            <option value="3">Last 3 Months</option>
+            <option value="6" selected>Last 6 Months</option>
+            <option value="12">Last 12 Months</option>
+        </select>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+        <div class="stat-card stat-total">
+            <div class="stat-label">Total Target</div>
+            <div class="stat-value" th:text="'₹' + ${#numbers.formatDecimal(analyticsData.totalTarget, 0, 'COMMA', 2, 'POINT')}">₹4,30,000</div>
+            <div class="stat-label">Across 4 Goals</div>
+        </div>
+        <div class="stat-card stat-saved">
+            <div class="stat-label">Total Saved</div>
+            <div class="stat-value" th:text="'₹' + ${#numbers.formatDecimal(analyticsData.totalSaved, 0, 'COMMA', 2, 'POINT')}">₹1,15,000</div>
+            <div class="stat-label">Accumulated</div>
+        </div>
+        <div class="stat-card stat-progress">
+            <div class="stat-label">Overall Progress</div>
+            <div class="stat-value" th:text="${#numbers.formatDecimal(analyticsData.overallProgress, 1, 2)} + '%'">26.7%</div>
+            <div class="stat-label">Completion Rate</div>
+        </div>
+        <div class="stat-card stat-rate">
+            <div class="stat-label">Monthly Savings Rate</div>
+            <div class="stat-value">22.5%</div>
+            <div class="stat-label">vs 30% Recommended</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="chart-row">
+        <div class="chart-section">
+            <h3 class="chart-title"><i class="fas fa-chart-line"></i> Monthly Savings Trend</h3>
+            <div class="chart-wrapper">
+                <canvas id="savingsTrendChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-section">
+            <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Goal Distribution</h3>
+            <div class="chart-wrapper">
+                <canvas id="goalsDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predictions Section -->
+    <div class="predictions-section">
+        <h3 class="chart-title"><i class="fas fa-crystal-ball"></i> AI Completion Predictions</h3>
+        <div class="prediction-grid" id="predictionsGrid">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Recommendations Section -->
+    <div class="recommendations-section">
+        <h3 class="chart-title"><i class="fas fa-lightbulb"></i> AI Recommendations</h3>
+        <div id="recommendationsList">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="/budgets/budget-and-goals" class="back-btn" style="background: #28a745;">
+            <i class="fas fa-edit"></i> Edit Goals
+        </a>
+        <a href="/trends/dashboard" class="back-btn" style="background: #6c757d;">
+            <i class="fas fa-tachometer-alt"></i> Back to Dashboard
+        </a>
+        <button class="back-btn" style="background: #17a2b8;" onclick="exportReport()">
+            <i class="fas fa-download"></i> Export Report
+        </button>
+    </div>
+</div>
+
+<!-- Thymeleaf Data Injection -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var analyticsData = /*[[${analyticsData}]]*/ {
+        goals: ["Emergency Fund", "Vacation", "New Car", "Home Down Payment"],
+        current: [50000, 20000, 15000, 30000],
+        target: [100000, 50000, 80000, 200000],
+        percentages: [50, 40, 18.75, 15],
+        totalSaved: 115000,
+        totalTarget: 430000,
+        overallProgress: 26.7,
+        monthsLabels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        monthlySaved: [10000, 15000, 20000, 25000, 30000, 35000],
+        predictions: [
+            {goal: "Emergency Fund", months: 2, confidence: "High", status: "Ahead"},
+            {goal: "Vacation", months: 5, confidence: "Medium", status: "On Track"},
+            {goal: "New Car", months: 18, confidence: "Low", status: "Behind"},
+            {goal: "Home Down Payment", months: 42, confidence: "Medium", status: "Behind"}
+        ],
+        recommendations: [
+            "Increase Emergency Fund monthly by ₹2,500 to finish 1 month early",
+            "Consider reducing Vacation budget by 10% to accelerate New Car goal",
+            "Automate ₹12,000 monthly to Home Down Payment",
+            "Review and optimize discretionary spending"
+        ]
+    };
+    /*]]>*/
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            // 1. Savings Trend Chart
+            const trendCtx = document.getElementById('savingsTrendChart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: analyticsData.monthsLabels,
+                    datasets: [{
+                        label: 'Monthly Savings',
+                        data: analyticsData.monthlySaved,
+                        borderColor: '#4a6ee0',
+                        backgroundColor: 'rgba(74, 110, 224, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Savings: ₹' + context.raw.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Goals Distribution Chart
+            const distributionCtx = document.getElementById('goalsDistributionChart').getContext('2d');
+            new Chart(distributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: analyticsData.goals,
+                    datasets: [{
+                        data: analyticsData.target,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // 3. Populate Predictions
+            const predictionsGrid = document.getElementById('predictionsGrid');
+            predictionsGrid.innerHTML = '';
+
+            analyticsData.predictions.forEach(pred => {
+                const statusClass = pred.status === 'Ahead' ? 'prediction-ahead' :
+                                  pred.status === 'On Track' ? 'prediction-ontrack' : 'prediction-behind';
+                const confidenceClass = pred.confidence === 'High' ? 'confidence-high' :
+                                      pred.confidence === 'Medium' ? 'confidence-medium' : 'confidence-low';
+
+                const card = document.createElement('div');
+                card.className = `prediction-card ${statusClass}`;
+                card.innerHTML = `
+                    <div class="goal-name">${pred.goal}</div>
+                    <div class="goal-prediction">
+                        Estimated completion in <strong>${pred.months} months</strong>
+                    </div>
+                    <div class="confidence ${confidenceClass}">
+                        ${pred.confidence} Confidence
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                        Status: <strong>${pred.status}</strong>
+                    </div>
+                `;
+                predictionsGrid.appendChild(card);
+            });
+
+            // 4. Populate Recommendations
+            const recList = document.getElementById('recommendationsList');
+            recList.innerHTML = '';
+
+            analyticsData.recommendations.forEach(rec => {
+                const item = document.createElement('div');
+                item.className = 'recommendation-item';
+                item.innerHTML = `
+                    <div class="rec-icon"><i class="fas fa-check-circle"></i></div>
+                    <div>${rec}</div>
+                `;
+                recList.appendChild(item);
+            });
+
+            console.log("Goals Analytics page initialized successfully!");
+
+        } catch (error) {
+            console.error("Error initializing goals analytics:", error);
+        }
+    });
+
+    function exportReport() {
+        alert("Export feature would generate a PDF report with all analytics data.");
+        // In real implementation, this would call an API to generate PDF/Excel
+    }
+</script>
+</body>
+</html>

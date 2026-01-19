@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 public interface FinancialTrendsRepository extends JpaRepository<FinancialTrends, Long> {
-    //List<SavingGoal> findByUserId(Long userId);
+    List<FinancialTrends> findByUserId(Long userId);
 
     List<FinancialTrends> findByUserIdAndTrendType(Long userId, String trendType);
 

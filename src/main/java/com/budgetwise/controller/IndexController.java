@@ -23,15 +23,25 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
-public class HomeController {
+public class IndexController {
 
     @GetMapping("/")  // Root URL shows home.html
     public String root() {
-        return "home";
+        return "index";
     }
 
-    @GetMapping("/home")
+    @GetMapping("/index")
     public String home() {
-        return "home";
+        return "index";
     }
+    // ADD THESE MAPPINGS:
+   /* @GetMapping("/login")
+    public String login() {
+        return "login";  // Returns templates/login.html
+    }
+
+    @GetMapping("/register")
+    public String register() {
+        return "register";  // Returns templates/register.html
+    }*/
 }

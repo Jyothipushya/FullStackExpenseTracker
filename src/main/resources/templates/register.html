@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BudgetWise | Register</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
@@ -40,21 +40,8 @@
                 <p>Start your free 30-day trial today</p>
             </div>
 
-            <!-- Flash Messages -->
-            <div th:if="${param.error}" class="alert alert-error">
-                <i class="fas fa-exclamation-circle"></i>
-                <span th:text="${param.error}">Registration failed</span>
-            </div>
-            <div th:if="${param.success}" class="alert alert-success">
-                <i class="fas fa-check-circle"></i>
-                <span th:text="${param.success}">Registration successful</span>
-            </div>
-
-            <!-- REGISTRATION FORM WITH CSRF TOKEN -->
-            <form id="registerForm" action="/register" method="POST">
-                <!-- ✅ CSRF TOKEN ADDED -->
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
+            <!-- Registration Form -->
+            <form id="registerForm">
                 <!-- Name Fields -->
                 <div class="form-row">
                     <div class="form-group">
@@ -100,7 +87,7 @@
                 </button>
 
                 <div class="auth-footer">
-                    <p>Already have an account? <a href="/login">Sign In</a></p>
+                    <p>Already have an account? <a href="login.html">Sign In</a></p>
                 </div>
             </form>
         </div>
@@ -126,21 +113,25 @@
             });
         });
 
-        // Simple password match validation
+        // Password match validation
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirmPassword');
         const form = document.getElementById('registerForm');
 
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                if (password.value !== confirmPassword.value) {
-                    e.preventDefault();
-                    alert('Passwords do not match!');
-                    return false;
-                }
-                return true;
-            });
-        }
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (password.value !== confirmPassword.value) {
+                alert('Passwords do not match!');
+                return false;
+            }
+
+            // Show success message
+            alert('Account created successfully! (This is a demo)');
+            // Redirect to login page
+            window.location.href = 'login.html';
+            return true;
+        });
     });
 </script>
 </body>

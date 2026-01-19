@@ -299,7 +299,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
                                        @Param("startDate") LocalDate startDate,
                                        @Param("endDate") LocalDate endDate);
 }*/
-package com.budgetwise.repository;
+/*package com.budgetwise.repository;
 
 import com.budgetwise.entity.Expense;
 import com.budgetwise.entity.User;
@@ -377,6 +377,84 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
                                          @Param("endDate") LocalDate endDate);
 
     // 7. Total income for a period
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e " +
+            "WHERE e.user.id = :userId AND e.date BETWEEN :startDate AND :endDate AND e.isIncome = true")
+    BigDecimal getTotalIncomeForPeriod(@Param("userId") Long userId,
+                                       @Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate);
+}*/
+package com.budgetwise.repository;
+
+import com.budgetwise.entity.Expense;
+import com.budgetwise.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Repository
+public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+
+    // SIMPLE METHODS THAT WORK:
+    List<Expense> findByUser(User user);
+    List<Expense> findByUserAndDateBetween(User user, LocalDate start, LocalDate end);
+    List<Expense> findByUserAndIsIncome(User user, boolean isIncome);
+
+    // Methods using userId
+    @Query("SELECT e FROM Expense e WHERE e.user.id = :userId")
+    List<Expense> findByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT e FROM Expense e WHERE e.user.id = :userId AND e.date BETWEEN :startDate AND :endDate")
+    List<Expense> findByUserIdAndDateBetween(@Param("userId") Long userId,
+                                             @Param("startDate") LocalDate startDate,
+                                             @Param("endDate") LocalDate endDate);
+
+    // ADD THIS METHOD for category filtering
+    @Query("SELECT e FROM Expense e WHERE e.user.id = :userId AND e.category = :category AND e.date BETWEEN :startDate AND :endDate")
+    List<Expense> findByUserIdAndCategoryAndDateBetween(@Param("userId") Long userId,
+                                                        @Param("category") String category,
+                                                        @Param("startDate") LocalDate startDate,
+                                                        @Param("endDate") LocalDate endDate);
+
+    // Other existing methods...
+    @Query(value = "SELECT EXTRACT(MONTH FROM date) AS month, SUM(amount) AS total " +
+            "FROM expenses WHERE user_id = :userId AND EXTRACT(YEAR FROM date) = :year " +
+            "GROUP BY EXTRACT(MONTH FROM date) ORDER BY month", nativeQuery = true)
+    List<Object[]> getMonthlyExpenseTrend(@Param("userId") Long userId, @Param("year") int year);
+
+    @Query("SELECT e.category, SUM(e.amount) FROM Expense e " +
+            "WHERE e.user.id = :userId AND e.date BETWEEN :startDate AND :endDate " +
+            "GROUP BY e.category ORDER BY SUM(e.amount) DESC")
+    List<Object[]> getCategoryBreakdown(@Param("userId") Long userId,
+                                        @Param("startDate") LocalDate startDate,
+                                        @Param("endDate") LocalDate endDate);
+
+    @Query(value = "SELECT EXTRACT(DOW FROM date) AS day, SUM(amount) AS total " +
+            "FROM expenses WHERE user_id = :userId AND date BETWEEN :startDate AND :endDate " +
+            "GROUP BY EXTRACT(DOW FROM date) ORDER BY day", nativeQuery = true)
+    List<Object[]> getSpendingByDayOfWeek(@Param("userId") Long userId,
+                                          @Param("startDate") LocalDate startDate,
+                                          @Param("endDate") LocalDate endDate);
+
+    @Query(value = "SELECT EXTRACT(YEAR FROM date) AS year, EXTRACT(MONTH FROM date) AS month, " +
+            "SUM(amount) AS total FROM expenses " +
+            "WHERE user_id = :userId AND date BETWEEN :startDate AND :endDate " +
+            "GROUP BY EXTRACT(YEAR FROM date), EXTRACT(MONTH FROM date) " +
+            "ORDER BY year, month", nativeQuery = true)
+    List<Object[]> getYearlyTrend(@Param("userId") Long userId,
+                                  @Param("startDate") LocalDate startDate,
+                                  @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e " +
+            "WHERE e.user.id = :userId AND e.date BETWEEN :startDate AND :endDate AND e.isIncome = false")
+    BigDecimal getTotalExpensesForPeriod(@Param("userId") Long userId,
+                                         @Param("startDate") LocalDate startDate,
+                                         @Param("endDate") LocalDate endDate);
+
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e " +
             "WHERE e.user.id = :userId AND e.date BETWEEN :startDate AND :endDate AND e.isIncome = true")
     BigDecimal getTotalIncomeForPeriod(@Param("userId") Long userId,

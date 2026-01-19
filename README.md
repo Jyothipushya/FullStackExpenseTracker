@@ -8,9 +8,9 @@ BudgetWise is a full-stack expense tracking and budgeting application built usin
 ## ✨ Key Features
 - User authentication and secure access
 - Income and expense tracking
-- Category-wise expense management
-- Budget planning
-- AI-driven insights (future scope)
+- Budget and saving goals 
+- Financial trends and visualization
+- Data export
 
 ---
 

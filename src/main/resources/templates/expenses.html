@@ -116,7 +116,7 @@
                             <form th:action="@{/expenses/delete/{id}(id=${expense.id})}"
                                   method="POST"
                                   style="display: inline;">
-                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+<!--                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />-->
                                 <button type="submit"
                                         class="btn-danger btn-small"
                                         onclick="return confirm('Delete this transaction?')">
@@ -148,7 +148,7 @@
         <div class="modal-body">
             <form id="addTransactionForm" action="/expenses/add" method="POST">
                 <!-- ✅ CSRF TOKEN -->
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+<!--                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />-->
 
                 <div class="form-group">
                     <label>Transaction Type</label>

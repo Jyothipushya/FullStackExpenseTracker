@@ -15,4 +15,4 @@ COPY --from=build /app/target/budgetwise-1.0.0.jar app.jar
 
 EXPOSE 8081
 
-ENTRYPOINT ["sh", "-c", "java -Dserver.port=$PORT -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Xms128m -Xmx384m -Dserver.port=$PORT -jar app.jar"]

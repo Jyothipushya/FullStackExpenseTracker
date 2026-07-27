@@ -72,6 +72,7 @@ public class AuthController {
             return "login";
 
         } catch (Exception e) {
+            e.printStackTrace();
             model.addAttribute("error", "Registration failed: " + e.getMessage());
             return "register";
         }

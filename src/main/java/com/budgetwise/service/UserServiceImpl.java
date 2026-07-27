@@ -41,6 +41,7 @@ public class UserServiceImpl implements UserService {
 
         // Save user
         User savedUser = userRepository.save(user);
+        userRepository.flush();
         System.out.println("USER SAVED to database with ID: " + savedUser.getId());
 
         return savedUser;

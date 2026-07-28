@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,7 +41,7 @@
             </div>
 
             <!-- Registration Form -->
-            <form id="registerForm">
+            <form id="registerForm" th:action="@{/register}" method="post">
                 <!-- Name Fields -->
                 <div class="form-row">
                     <div class="form-group">
@@ -87,7 +87,7 @@
                 </button>
 
                 <div class="auth-footer">
-                    <p>Already have an account? <a href="login.html">Sign In</a></p>
+                    <p>Already have an account? <a th:href="@{/login}">Sign In</a></p>
                 </div>
             </form>
         </div>
@@ -119,19 +119,11 @@
         const form = document.getElementById('registerForm');
 
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            if (password.value !== confirmPassword.value) {
-                alert('Passwords do not match!');
-                return false;
-            }
-
-            // Show success message
-            alert('Account created successfully! (This is a demo)');
-            // Redirect to login page
-            window.location.href = 'login.html';
-            return true;
-        });
+    if (password.value !== confirmPassword.value) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+    }
+});
     });
 </script>
 </body>

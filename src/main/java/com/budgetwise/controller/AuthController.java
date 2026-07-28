@@ -46,6 +46,10 @@ public class AuthController {
                                @RequestParam String confirmPassword,
                                Model model) {
 
+        System.out.println("===== REGISTER REQUEST RECEIVED =====");
+        System.out.println("First Name: " + firstName);
+        System.out.println("Last Name: " + lastName);
+        System.out.println("Email: " + email);
         // Validate passwords match
         if (!password.equals(confirmPassword)) {
             model.addAttribute("error", "Passwords do not match!");

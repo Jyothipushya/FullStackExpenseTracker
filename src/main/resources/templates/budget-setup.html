@@ -71,7 +71,7 @@
             </div>
 
             <form id="budgetForm" action="/budgets/save" method="POST">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+<!--                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />-->
 
                 <div class="form-group">
                     <label for="category">Category</label>
@@ -158,8 +158,8 @@
                 <p>Let AI create budgets based on your income</p>
             </div>
 
-            <form action="/budgets/quick-setup" method="POST">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+           <form action="/budgets/quick-setup" method="POST">
+<!--                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />-->
 
                 <div class="form-group">
                     <label for="aiMonthlyIncome">Your Monthly Income (₹)</label>

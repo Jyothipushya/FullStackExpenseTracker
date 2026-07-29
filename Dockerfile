@@ -11,8 +11,8 @@ FROM eclipse-temurin:11-jre
 
 WORKDIR /app
 
-COPY --from=build /app/target/budgetwise-1.0.0.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8081
+EXPOSE 8080
 
 ENTRYPOINT ["sh", "-c", "java -Xms128m -Xmx384m -Dserver.port=$PORT -jar app.jar"]

@@ -71,34 +71,3 @@ public class SavingGoal {
         return (savedAmount / targetAmount) * 100;
     }
 }
-/*package com.budgetwise.entity;
-
-import javax.persistence.*;
-import java.time.LocalDate;
-import org.springframework.format.annotation.DateTimeFormat;  // Add this import
-
-@Entity
-@Table(name = "saving_goals")
-public class SavingGoal {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String name;
-    private String category;
-    private Double targetAmount;
-    private Double savedAmount = 0.0;
-    private Double monthlyContribution;
-    private String priority = "MEDIUM";
-
-    @DateTimeFormat(pattern = "yyyy-MM-dd")  // ADD THIS LINE
-    private LocalDate targetDate;
-
-    private LocalDate startDate = LocalDate.now();
-    private Boolean isCompleted = false;
-    private String icon = "fa-bullseye";
-    private Long userId;
-
-    // ... rest of your getters and setters ...
-}*/

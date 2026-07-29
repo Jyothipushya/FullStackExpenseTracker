@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -567,8 +567,8 @@
         <li><a href="#features">Features</a></li>
         <li><a href="#dashboard">Dashboard</a></li>
         <li><a href="#testimonials">Testimonials</a></li>
-        <li><a href="login.html" class="btn-login">Login</a></li>
-        <li><a href="/register" class="btn-register">Get Started Free</a></li>
+        <a th:href="@{/login}" class="btn-login">Login</a>
+        <a th:href="@{/register}" class="btn-register">Get Started Free</a>
     </ul>
 </div>
 
@@ -579,7 +579,7 @@
             <h1>AI-Powered Personal Finance Management</h1>
             <p>Take control of your finances with intelligent budgeting, expense tracking, and smart savings recommendations powered by artificial intelligence.</p>
             <div class="hero-buttons">
-                <a href="register.html" class="btn-hero-primary">
+                <a th:href="@{/register}" class="btn-hero-primary">
                     <i class="fas fa-rocket"></i> Start Free Trial
                 </a>
                 <a href="#features" class="btn-hero-secondary">
@@ -702,7 +702,7 @@
         <div class="cta-content fade-in">
             <h2>Ready to Transform Your Finances?</h2>
             <p>Join thousands of users who have taken control of their financial future with BudgetWise</p>
-            <a href="register.html" class="btn-hero-primary" style="background: white; color: #667eea;">
+            <a th:href="@{/register}" class="btn-hero-primary">
                 <i class="fas fa-rocket"></i> Start Your Free Trial
             </a>
         </div>

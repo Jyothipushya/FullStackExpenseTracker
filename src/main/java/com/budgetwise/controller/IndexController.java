@@ -34,14 +34,5 @@ public class IndexController {
     public String home() {
         return "index";
     }
-    // ADD THESE MAPPINGS:
-   /* @GetMapping("/login")
-    public String login() {
-        return "login";  // Returns templates/login.html
-    }
 
-    @GetMapping("/register")
-    public String register() {
-        return "register";  // Returns templates/register.html
-    }*/
 }
